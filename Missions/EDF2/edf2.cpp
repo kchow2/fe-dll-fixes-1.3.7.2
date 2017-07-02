@@ -68,7 +68,7 @@ public:
 	// handles
 	Handle
 		h_first,
-		Object2,
+		m_StayPut,
 		m_Portals[NUM_PORTALS],
 		m_Recycler,
 		m_Player,
@@ -176,7 +176,7 @@ void edf2::Execute(void)
 		switch (m_MissionState){
 		case 0:
 			m_Player = GetPlayerHandle();
-			Object2 = BuildObject("stayput", 0, m_Player);
+			m_StayPut = BuildObject("stayput", 0, m_Player);
 			m_Recycler = GetHandle("Recycler");
 			Stop(m_Recycler, 1);
 			m_DropshipLanded = GetHandle("DropShip");
@@ -208,7 +208,7 @@ void edf2::Execute(void)
 			m_Player = GetPlayerHandle();
 			StopEarthQuake();
 			RemoveObject(m_DropshipFlying);
-			RemoveObject(Object2);
+			RemoveObject(m_StayPut);
 			SetPosition(m_Recycler, "RecyclerPath");
 			SetVelocity(m_Recycler, Vector(0, 0, 15));
 			SetPosition(m_Player, "PlacePlayer");

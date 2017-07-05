@@ -1,5 +1,6 @@
 #include "..\Shared\SPMission.h"
 
+#define AUDIO_MESSAGE_COUNT 10
 #define NUM_TANKS 6
 #define NUM_SURVIVORS 10
 
@@ -153,6 +154,15 @@ void edf01::Setup(void)
 	PreloadODF("evscout");
 	PreloadODF("evturr");
 	PreloadODF("evmisl");
+
+	//Preload audio
+	for (int i = 0; i < AUDIO_MESSAGE_COUNT; i++){
+		sprintf_s(buf, "edf01_%02d.wav", i);
+		PreloadAudioMessage(buf);
+	}
+	PreloadAudioMessage("edf01_05A.wav");
+	PreloadAudioMessage("edf01_05B.wav");
+	PreloadAudioMessage("edf01_06A.wav");
 }
 
 void edf01::AddObject(Handle h)

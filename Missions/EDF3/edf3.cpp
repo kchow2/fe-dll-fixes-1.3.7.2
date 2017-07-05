@@ -573,10 +573,10 @@ void edf3::HandleDinos(void){
 				h = BuildObject("compy01", 9, "littledino1");
 				Patrol(h, "littledino1", 1);
 			}
-			for (int i = 0; i < 5; i++){
-				h = BuildObject("compy", 9, "littledino2");
-				Patrol(h, "littledino2", 1);
-			}
+			//for (int i = 0; i < 5; i++){	//"compy.odf" does not exist!
+			//	h = BuildObject("compy", 9, "littledino2");
+			//	Patrol(h, "littledino2", 1);
+			//}
 			m_DinoState++;
 			m_DinoTimer = GetTime() + 15;
 			break;

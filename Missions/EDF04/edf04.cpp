@@ -67,24 +67,24 @@ public:
 	// handles
 	Handle
 		h_first,
-		Object1,	//mega gun
-		Object2,	//mega guard 1
-		Object3,	//mega guard 1
-		Object4[6],	//portals
-		Object11,	//"stick" in final megagun cutscene
-		Object14,	//recy
-		Object15,	//player
-		Object16,	//engineer transport
-		Object17,	//Drop3?
-		Object18, //Engineer (pilot)
-		Object28[NUM_TURRETS1],
-		Object32[NUM_TURRETS2],
-		Object36[NUM_KRULS],
-		Object41[NUM_GUARDIANS],	//hadean base guardian turrets
-		Object45,	//Base Nav
-		Object46,	//Mega gun Nav
-		Object47,	//Hadean Base Nav
-		Object48,	//Nav Delta
+		m_MegaGun,
+		m_MegaGuard1,
+		m_MegaGuard2,
+		m_Portals[6],
+		m_CutsceneTarget,	//"stick" in final megagun cutscene
+		m_Recycler,
+		m_Player,
+		m_EngineerTransport,
+		m_Dropship,
+		m_Engineer,
+		m_Turrets1[NUM_TURRETS1],
+		m_Turrets2[NUM_TURRETS2],
+		m_Kruls[NUM_KRULS],
+		m_HadeanGuardianTurrets[NUM_GUARDIANS],	//hadean base guardian turrets
+		m_BaseNav,
+		m_MegaGunNav,
+		m_HadeanBaseNav,
+		m_NavDelta,
 		h_last;
 
 	// integers
@@ -144,19 +144,19 @@ void edf04::Setup(void)
 		PreloadAudioMessage(buf);
 	}
 
-	Object1 = GetHandle("Mega Gun");
-	Object2 = GetHandle("MGD1");
-	Object3 = GetHandle("MGD2");
-	Object14 = GetHandle("unnamed_ivrecy");
-	Object16 = GetHandle("Tran1");
-	Object17 = GetHandle("Drop3");
+	m_MegaGun = GetHandle("Mega Gun");
+	m_MegaGuard1 = GetHandle("MGD1");
+	m_MegaGuard2 = GetHandle("MGD2");
+	m_Recycler = GetHandle("unnamed_ivrecy");
+	m_EngineerTransport = GetHandle("Tran1");
+	m_Dropship = GetHandle("Drop3");
 	for (int i = 0; i < NUM_PORTALS; i++){
 		sprintf_s(buf, "Portal%d", i + 1);
-		Object4[i] = GetHandle(buf);
+		m_Portals[i] = GetHandle(buf);
 	}
 	for (int i = 0; i < NUM_GUARDIANS; i++){
 		sprintf_s(buf, "ET%d", i + 1);
-		Object41[i] = GetHandle(buf);
+		m_HadeanGuardianTurrets[i] = GetHandle(buf);
 	}
 }
 
@@ -165,15 +165,15 @@ void edf04::AddObject(Handle newGuy)
 	Handle temp;
 	SetSkill(newGuy, 3);
 	if (IsOdf(newGuy, "ibfact_s")){
-		temp = TeleportIn("cvhtank", 6, Object4[3], 20);
+		temp = TeleportIn("cvhtank", 6, m_Portals[3], 20);
 		Attack(temp, newGuy, 1);
 	}
 	else if (IsOdf(newGuy, "ibgtow")){
-		temp = TeleportIn("cvhscout", 6, Object4[1], 20);
+		temp = TeleportIn("cvhscout", 6, m_Portals[1], 20);
 		Attack(temp, newGuy, 1);
 	}
 	else if (IsOdf(newGuy, "ibpgen")){
-		temp = TeleportIn("cvhscout", 6, Object4[3], 20);
+		temp = TeleportIn("cvhscout", 6, m_Portals[3], 20);
 		Attack(temp, newGuy, 1);
 	}
 	else if (IsOdf(newGuy, "ibsbay")){
@@ -188,35 +188,35 @@ void edf04::Execute(void)
 		case 0:
 			SetScrap(1, 40);
 			AudioMessage("edf0401.wav");	//Windex:"Attention Spartacus task force..."
-			SetObjectiveOn(Object16);
+			SetObjectiveOn(m_EngineerTransport);
 			CameraReady();
 			m_MissionState++;
 			break;
 		case 1:
-			if (CameraPath("rcam", 1500, 2000, Object14) || CameraCancelled()){
+			if (CameraPath("rcam", 1500, 2000, m_Recycler) || CameraCancelled()){
 				CameraFinish();
 				AddObjective(_Text1, WHITE);
-				Object45 = BuildObject("ibnav", 1, "bss");
-				SetObjectiveName(Object45, "Base Site");
-				SetObjectiveOn(Object45);
+				m_BaseNav = BuildObject("ibnav", 1, "bss");
+				SetObjectiveName(m_BaseNav, "Base Site");
+				SetObjectiveOn(m_BaseNav);
 				SetPlan("edf04a.aip", 6);
 				m_MissionState++;
 			}
 			break;
 		case 2:	//LOC_46
-			if (IsOdf(Object14, "ibrecy_s")){
-				if (GetDistance(Object14, Object45) > 200){
+			if (IsOdf(m_Recycler, "ibrecy_s")){
+				if (GetDistance(m_Recycler, m_BaseNav) > 200){
 					AudioMessage("edf0402.wav");	//Windex:"You were clearly ordered to deploy near the nav beacon..."
 					FailMission(GetTime() + 10, "edf04l2.des");
 					m_MissionState = 99;
 				}
 				else{
-					RemoveObject(Object45);
+					RemoveObject(m_BaseNav);
 					ClearObjectives();
 					AddObjective(_Text10, WHITE);
-					Object47 = BuildObject("ibnav", 1, "ebs");
-					SetObjectiveName(Object47, "Hadean Base");
-					SetObjectiveOn(Object47);
+					m_HadeanBaseNav = BuildObject("ibnav", 1, "ebs");
+					SetObjectiveName(m_HadeanBaseNav, "Hadean Base");
+					SetObjectiveOn(m_HadeanBaseNav);
 					AudioMessage("edf0403.wav");	//Skyeye:"We've pinpointed the Hadean stronghold..."
 					m_MissionState++;
 					m_MissionTimer = GetTime() + 10;
@@ -226,36 +226,36 @@ void edf04::Execute(void)
 		case 3:
 			AddObjective(_Text2, WHITE);
 			AudioMessage("edf0404.wav");	//Skyeye:"We've found the Mega Gun location..."
-			Object46 = BuildObject("ibnav", 1, "mgs");
-			SetObjectiveName(Object46, "Mega Gun");
-			SetObjectiveOn(Object46);
+			m_MegaGunNav = BuildObject("ibnav", 1, "mgs");
+			SetObjectiveName(m_MegaGunNav, "Mega Gun");
+			SetObjectiveOn(m_MegaGunNav);
 			SetPlan("edf04b.aip", 6);
 			m_MissionState++;
 			break;
 		case 4:	//LOC_69
-			Object15 = GetPlayerHandle();
-			if (GetDistance(Object15, Object46) < 250){
+			m_Player = GetPlayerHandle();
+			if (GetDistance(m_Player, m_MegaGunNav) < 250){
 				AudioMessage("edf0405.wav");	//O'Ryan:"Interesting, the Guardian turrets seem to be inactive..."
 				m_MissionState++;
 			}
 			break;
 		case 5:	//LOC_79
-			if (GetDistance(Object16, Object1) < 75){
-				Stop(Object16, 1);
-				Vector pos = GetPosition(Object16);
-				Object18 = BuildObject("ispilo", 1, pos);
-				SetObjectiveName(Object18, "Engineer");
-				SetObjectiveOn(Object18);
-				SetObjectiveOff(Object1);
-				SetObjectiveOff(Object46);
-				SetObjectiveOff(Object16);
-				Goto(Object18, Object1, 0);
+			if (GetDistance(m_EngineerTransport, m_MegaGun) < 75){
+				Stop(m_EngineerTransport, 1);
+				Vector pos = GetPosition(m_EngineerTransport);
+				m_Engineer = BuildObject("ispilo", 1, pos);
+				SetObjectiveName(m_Engineer, "Engineer");
+				SetObjectiveOn(m_Engineer);
+				SetObjectiveOff(m_MegaGun);
+				SetObjectiveOff(m_MegaGunNav);
+				SetObjectiveOff(m_EngineerTransport);
+				Goto(m_Engineer, m_MegaGun, 0);
 				m_MissionState++;
 			}
 			break;
 		case 6:	//LOC_90
-			if (GetDistance(Object18, Object1) < 40){
-				RemoveObject(Object18);
+			if (GetDistance(m_Engineer, m_MegaGun) < 40){
+				RemoveObject(m_Engineer);
 				ClearObjectives();
 				AddObjective(_Text3, GREEN);
 				AudioMessage("edf0406.wav");	//O'Ryan:"I'm inside the megagun..."
@@ -268,9 +268,9 @@ void edf04::Execute(void)
 			AddObjective(_Text2, GREEN);
 			AddObjective(_Text4, WHITE);
 			AudioMessage("edf0407.wav");	//O'Ryan:"Yes! The megagun is online..."
-			SetTeamNum(Object1, 1);
-			SetTeamNum(Object2, 1);
-			SetTeamNum(Object3, 1);			
+			SetTeamNum(m_MegaGun, 1);
+			SetTeamNum(m_MegaGuard1, 1);
+			SetTeamNum(m_MegaGuard2, 1);			
 			m_MissionState++;
 			m_MissionTimer = GetTime() + 10;
 			break;
@@ -308,12 +308,12 @@ void edf04::Execute(void)
 			}
 			break;
 		case 13:
-			if (CameraPath("cam1", 5000, 2000, Object1) || CameraCancelled()){
+			if (CameraPath("cam1", 5000, 2000, m_MegaGun) || CameraCancelled()){
 				CameraFinish();
 				SetScrap(1, 0);
 				ClearObjectives();
 				AddObjective(_Text4, GREEN);
-				m_HadRetaliate = true;	//RunSpeed,_Routine11,1,true
+				m_HadRetaliate = true;
 				AudioMessage("edf0413.wav");	//Skyeye:"We're picking up substantial energy pulsations.."
 				m_MissionState++;
 			}
@@ -325,7 +325,7 @@ void edf04::Execute(void)
 			}
 			break;
 		case 15:
-			if (CameraPath("cam2", 5000, 2000, Object1) || CameraCancelled()){
+			if (CameraPath("cam2", 5000, 2000, m_MegaGun) || CameraCancelled()){
 				CameraFinish();
 				SetScrap(1, 0);
 				ClearObjectives();
@@ -338,8 +338,8 @@ void edf04::Execute(void)
 			AudioMessage("edf0414.wav");	//Skyeye:"We just wiped out the megagun on planet Troy..."
 			AddObjective(_Text7, WHITE);
 			SetPlan("edf04d.aip", 6);
-			m_HadRetaliate = true; //RunSpeed,_Routine11,1,true
-			Goto(Object16, Object46, 1);
+			m_HadRetaliate = true;
+			Goto(m_EngineerTransport, m_MegaGunNav, 1);
 			m_CuttingItCloseTime = GetTime() + 1200;
 			m_MissionState++;
 			break;
@@ -365,19 +365,19 @@ void edf04::Execute(void)
 		case 19:	//LOC_152
 			{
 				AudioMessage("edf0416.wav");	//O'Ryan:"Fire!"
-				m_RecyclerRetreat = true;	//RunSpeed,_Routine5,1,false
-				Vector pos = GetPosition(Object1);
+				m_RecyclerRetreat = true;
+				Vector pos = GetPosition(m_MegaGun);
 				pos.y += 10;
-				Object11 = BuildObject("stick", 0, pos);
-				m_DestroyMegaturrets = true; //RunSpeed,_Routine9,1,true
+				m_CutsceneTarget = BuildObject("stick", 0, pos);
+				m_DestroyMegaturrets = true;
 				CameraReady();
 				m_MissionState++;
 			}
 			break;
 		case 20:
-			if (CameraPath("cam3", 5000, 2500, Object11) || CameraCancelled()){
+			if (CameraPath("cam3", 5000, 2500, m_CutsceneTarget) || CameraCancelled()){
 				CameraFinish();
-				RemoveObject(Object11);
+				RemoveObject(m_CutsceneTarget);
 				m_MissionState++;
 			}
 			break;
@@ -388,7 +388,7 @@ void edf04::Execute(void)
 		case 22:
 			if (CameraPathDir("mtcam", 3000, 3000) || CameraCancelled()){
 				CameraFinish();
-				Object11 = GetHandle("FN");
+				m_CutsceneTarget = GetHandle("FN");
 				m_MissionState++;
 			}
 			break;
@@ -397,26 +397,26 @@ void edf04::Execute(void)
 			m_MissionState++;
 			break;
 		case 24:
-			if (CameraPath("dtcam", 5000, 1750, Object11) || CameraCancelled()){
+			if (CameraPath("dtcam", 5000, 1750, m_CutsceneTarget) || CameraCancelled()){
 				CameraFinish();
-				RemoveObject(Object11);
+				RemoveObject(m_CutsceneTarget);
 				SetScrap(1, 0);
 				ClearObjectives();
 				AddObjective(_Text11, WHITE);
 				AudioMessage("edf0417.wav");
-				m_SpawnTurrets = false; //RunSpeed,_Routine8,0,false
-				m_SpawnKruls = false; //RunSpeed,_Routine10,0,false
-				Object48 = BuildObject("ibnav", 1, "NGTE");
-				SetObjectiveName(Object48, "Nav Delta");
-				SetObjectiveOn(Object48);
-				SetObjectiveOn(Object14);	//added objective marker to the recycler
+				m_SpawnTurrets = false;
+				m_SpawnKruls = false;
+				m_NavDelta = BuildObject("ibnav", 1, "NGTE");
+				SetObjectiveName(m_NavDelta, "Nav Delta");
+				SetObjectiveOn(m_NavDelta);
+				SetObjectiveOn(m_Recycler);	//added objective marker to the recycler
 				m_MissionState++;
 			}
 			break;
 		case 25:	//LOC_173
-			Object15 = GetPlayerHandle();
-			if (GetDistance(Object14, Object48) < 30 && 
-				GetDistance(Object15, Object48) < 75){
+			m_Player = GetPlayerHandle();
+			if (GetDistance(m_Recycler, m_NavDelta) < 30 && 
+				GetDistance(m_Player, m_NavDelta) < 75){
 				ClearObjectives();
 				AddObjective(_Text11, GREEN);
 				SucceedMission(GetTime() + 10, "edf04w1.des");
@@ -426,9 +426,9 @@ void edf04::Execute(void)
 		case 199:	//LOC_180
 			{
 				//player took too long. Mission failed
-				Vector pos = GetPosition(Object1);
+				Vector pos = GetPosition(m_MegaGun);
 				pos.y += 10;
-				Object11 = BuildObject("stick", 0, pos);
+				m_CutsceneTarget = BuildObject("stick", 0, pos);
 				pos.y += 5;
 				BuildObject("mbbeam", 9, pos);
 				BuildObject("mbfire", 9, pos);
@@ -437,9 +437,9 @@ void edf04::Execute(void)
 			}
 			break;
 		case 200:
-			if (CameraPath("cam3", 5000, 2500, Object11) || CameraCancelled()){
+			if (CameraPath("cam3", 5000, 2500, m_CutsceneTarget) || CameraCancelled()){
 				CameraFinish();
-				RemoveObject(Object11);
+				RemoveObject(m_CutsceneTarget);
 				FailMission(GetTime() + 2, "edf04l4.des");
 				m_MissionState++;
 			}
@@ -473,13 +473,13 @@ void edf04::HandleSetup(void){
 			BuildObject("evturr", 6, "path_5");
 			BuildObject("evturr", 6, "path_6");
 			BuildObject("evturr", 6, "path_7");
-			SetAnimation(Object17, "takeoff", 1);
-			StartAnimation(Object17);
+			SetAnimation(m_Dropship, "takeoff", 1);
+			StartAnimation(m_Dropship);
 			m_SetupState++;
 			m_SetupTimer = GetTime() + 15;
 			break;
 		case 1:
-			RemoveObject(Object17);
+			RemoveObject(m_Dropship);
 			h = BuildObject("ptera02", 0, "aniwalk1");
 			Patrol(h, "aniwalk1", 1);
 			h = BuildObject("ptera03", 0, "aniwalk2");
@@ -507,7 +507,7 @@ void edf04::DestroyMegaturrets(void){
 			break;
 		case 1:
 			{
-			Vector pos = GetPosition(Object1);
+			Vector pos = GetPosition(m_MegaGun);
 			pos.y += 15;
 			BuildObject("mbbeam", 9, pos);
 			BuildObject("mbfire", 9, pos);
@@ -516,28 +516,28 @@ void edf04::DestroyMegaturrets(void){
 			m_MegaturrTimer = GetTime() + 14;
 			break;
 		case 2:
-			EjectPilot(Object2);
-			EjectPilot(Object3);
+			EjectPilot(m_MegaGuard1);
+			EjectPilot(m_MegaGuard2);
 			m_MegaturrState++;
 			m_MegaturrTimer = GetTime() + 3;
 			break;
 		case 3:
-			EjectPilot(Object41[0]);
+			EjectPilot(m_HadeanGuardianTurrets[0]);
 			m_MegaturrState++;
 			m_MegaturrTimer = GetTime() + 2;
 			break;
 		case 4:
-			EjectPilot(Object41[1]);
+			EjectPilot(m_HadeanGuardianTurrets[1]);
 			m_MegaturrState++;
 			m_MegaturrTimer = GetTime() + 2;
 			break;
 		case 5:
-			EjectPilot(Object41[2]);
+			EjectPilot(m_HadeanGuardianTurrets[2]);
 			m_MegaturrState++;
 			m_MegaturrTimer = GetTime() + 2;
 			break;
 		case 6:
-			EjectPilot(Object41[3]);
+			EjectPilot(m_HadeanGuardianTurrets[3]);
 			m_MegaturrState++;
 			break;
 		}
@@ -548,9 +548,9 @@ void edf04::SpawnKruls(void){
 	char *cerbPatrolRoutes[NUM_KRULS] = { "STDpath","STDpath","STDpath","STDs1","STDs2" };
 	if (m_CerbSpawnTimer < GetTime()){
 		for (int i = 0; i < NUM_KRULS; i++){
-			if (!IsAround(Object36[i])){
-				Object36[i] = TeleportIn("cvhtank", 6, Object4[5], 30);
-				Patrol(Object36[i], cerbPatrolRoutes[i], 1);
+			if (!IsAround(m_Kruls[i])){
+				m_Kruls[i] = TeleportIn("cvhtank", 6, m_Portals[5], 30);
+				Patrol(m_Kruls[i], cerbPatrolRoutes[i], 1);
 			}
 		}
 		m_CerbSpawnTimer = GetTime() + 220;
@@ -569,9 +569,9 @@ void edf04::SpawnTurrets(void){
 			break;
 		case 1:	//LOC_238
 			for (int i = 0; i < NUM_TURRETS1; i++){
-				if (!IsAround(Object28[i])){
-					Object28[i] = TeleportIn("evturr", 6, Object4[2], 30);
-					Goto(Object28[i], turretPos1[i]);
+				if (!IsAround(m_Turrets1[i])){
+					m_Turrets1[i] = TeleportIn("evturr", 6, m_Portals[2], 30);
+					Goto(m_Turrets1[i], turretPos1[i]);
 				}
 			}
 			m_TurretSpawnState++;
@@ -579,9 +579,9 @@ void edf04::SpawnTurrets(void){
 			break;
 		case 2:	//LOC_253
 			for (int i = 0; i < NUM_TURRETS2; i++){
-				if (!IsAround(Object32[i])){
-					Object32[i] = TeleportIn("evturr", 6, Object4[4], 30);
-					Goto(Object32[i], turretPos2[i]);
+				if (!IsAround(m_Turrets2[i])){
+					m_Turrets2[i] = TeleportIn("evturr", 6, m_Portals[4], 30);
+					Goto(m_Turrets2[i], turretPos2[i]);
 				}
 			}
 			m_TurretSpawnState = 0;
@@ -609,13 +609,13 @@ void edf04::HadeanRetaliate(void){
 			//spawn in some random cerb units to harrass player's extractors
 			for (int i = 0; i < 6; i++){
 				int r = rand() % 5;
-				Handle h = TeleportIn(odfs[r], 6, Object4[portals[r]], 20);
+				Handle h = TeleportIn(odfs[r], 6, m_Portals[portals[r]], 20);
 				Goto(h, locations[r], 0);
 			}
-			Attack(TeleportIn("cvhtank", 6, Object4[3], 20), Object14, 1);
-			Attack(TeleportIn("cvhscout", 6, Object4[3], 20), Object14, 1);
-			Attack(TeleportIn("cvhtank", 6, Object4[3], 20), Object14, 1);
-			Attack(TeleportIn("cvhscout", 6, Object4[3], 20), Object14, 1);
+			Attack(TeleportIn("cvhtank", 6, m_Portals[3], 20), m_Recycler, 1);
+			Attack(TeleportIn("cvhscout", 6, m_Portals[3], 20), m_Recycler, 1);
+			Attack(TeleportIn("cvhtank", 6, m_Portals[3], 20), m_Recycler, 1);
+			Attack(TeleportIn("cvhscout", 6, m_Portals[3], 20), m_Recycler, 1);
 			m_HadRetaliateState++;
 			m_HadRetaliateTimer = GetTime() + 15;
 			break;
@@ -636,15 +636,15 @@ void edf04::HadeanRetaliate(void){
 void edf04::HandleRecyclerRetreat(void){
 	switch (m_RecyclerState){
 	case 0:
-		Object14 = ReplaceObject(Object14, "ivrecy");
-		SetTeamNum(Object14, 2);
+		m_Recycler = ReplaceObject(m_Recycler, "ivrecy");
+		SetTeamNum(m_Recycler, 2);
 		SetPlan("edf04e.aip", 6);
 		m_RecyclerState++;
 		break;
 	case 1:
-		Object15 = GetPlayerHandle();
-		if (GetDistance(Object14, Object15) < 75){
-			Goto(Object14, Object48, 1);
+		m_Player = GetPlayerHandle();
+		if (GetDistance(m_Recycler, m_Player) < 75){
+			Goto(m_Recycler, m_NavDelta, 1);
 			m_RecyclerState++;
 		}
 		break;
@@ -653,11 +653,11 @@ void edf04::HandleRecyclerRetreat(void){
 
 void edf04::CheckStuffIsAlive(void){
 	if (!m_MissionFailed){
-		if (!IsAround(Object14)){
+		if (!IsAround(m_Recycler)){
 			FailMission(GetTime() + 10, "edf04l1.des");
 			m_MissionFailed = true;
 		}
-		else if (!IsAround(Object16)){
+		else if (!IsAround(m_EngineerTransport)){
 			ClearObjectives();
 			AddObjective(_Text9, RED);
 			//AudioMessage("edf04l3.wav");	//doesn't exist (that's an 'L', not a '1')

@@ -1,6 +1,7 @@
 #include "..\Shared\SPMission.h"
 #include <math.h>
 
+#define AUDIO_MESSAGE_COUNT 12
 #define NUM_PORTALS 5
 #define NUM_ATTACKERS 8
 
@@ -142,19 +143,13 @@ void edf2::Setup(void)
 	PreloadODF("evmislu");
 	PreloadODF("evtanku");
 	PreloadODF("evmort");
-	PreloadAudioMessage("edf02_01.wav");	
-	PreloadAudioMessage("edf02_02.wav");
-	PreloadAudioMessage("edf02_03.wav");
-	PreloadAudioMessage("edf02_04.wav");
-	PreloadAudioMessage("edf02_05.wav");
+
+	//Preload audio messages
+	for (int i = 0; i < AUDIO_MESSAGE_COUNT; i++){
+		sprintf_s(buf, "edf02_%02d.wav", i);
+		PreloadAudioMessage(buf);
+	}
 	PreloadAudioMessage("edf02_05A.wav");
-	PreloadAudioMessage("edf02_06.wav");
-	PreloadAudioMessage("edf02_07.wav");
-	PreloadAudioMessage("edf02_08.wav");
-	PreloadAudioMessage("edf02_09.wav");
-	PreloadAudioMessage("edf02_10.wav");
-	PreloadAudioMessage("edf02_11.wav");
-	PreloadAudioMessage("edf02_12.wav");
 	PreloadAudioMessage("xemt2.wav");
 }
 
@@ -292,8 +287,7 @@ void edf2::Execute(void)
 	HandleScavTeleport();
 	HandleHadeanAttack();
 	HandleStewartNag();
-	HandlePortals();
-	
+	HandlePortals();	
 
 	//recycler moving to base after being teleported
 	if (m_RecyclerMove && m_RecyclerMoveTime < GetTime()){

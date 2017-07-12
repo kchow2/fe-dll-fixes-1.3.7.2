@@ -3,6 +3,7 @@
 
 #define NUM_DEFENDERS 10
 #define NUM_PILOTS 8
+#define NUM_EMPTIES 6
 
 class edf5 : public SPMission 
 {
@@ -61,39 +62,23 @@ public:
 
 	Handle
 		h_first,
-		Object1,	//recycler
-		Object2,	//player
-		Object3,	//service truck
-		Object4,	//service truck
-		Object5, //transport
-		Object13[NUM_PILOTS],
-		Object21,	//Portal1
-		Object22,	//Portal2
-		Object23,	//exit portal
-		Object25[NUM_DEFENDERS],	//Defender
-		//Object35,	//hadean attacker
-		//Object36,	//hadean attacker
-		//Object37,	//hadean attacker
-		//Object38,	//hadean attacker
-		//Object39,	//hadean attacker
-		//Object40,	//hadean attacker
-		//Object41,	//hadean attacker
-		//Object42,	//hadean attacker
-		//Object43,	//hadean attacker
-		//Object44,	//hadean attacker
-		Object45,	//service truck
-		Object46,	//service truck
-		//Object48,	//temp handle for deathbomb
-		Object49,	//doesn't seem to be set. Was probably intended to be the Hadean believers vat by the repair depot
-		Object50,	//empty hadean scout 1
-		Object51,	//empty hadean scout 2
-		Object52,	//empty hadean tank 1
-		Object53,	//empty hadean tank 2
-		Object54,	//empty hadean zeus 1
-		Object55,	//empty hadean zeus 2
-		Object56,	//hadean turret 1
-		Object57,	//hadean turret 2
-		Object59,	//hang glider pickup
+		m_Recycler,	//recycler
+		m_Player,	//player
+		m_ServiceTruck1,	//service truck
+		m_ServiceTruck2,	//service truck
+		m_Transport, //transport
+		m_Pilots[NUM_PILOTS],
+		m_Portal1,
+		m_Portal2,
+		m_ExitPortal,
+		m_Defenders[NUM_DEFENDERS],	//edf units on plateau 
+		m_ServiceTruck3,
+		m_ServiceTruck4,
+		m_HadeanTrain,	//doesn't seem to be set. Was probably intended to be the Hadean believers vat by the repair depot
+		m_EmptyShips[NUM_EMPTIES],	//empty ships at Hadean supply outpost
+		m_HadTurr1,
+		m_HadTurr2,
+		m_HangGliderPickup,
 		h_last;
 
 	int
@@ -110,6 +95,7 @@ public:
 		Variable6,	//recy rendezvous timer
 		Variable7,	//player was left behind
 		Variable8,	//recy went through 1st portal
+		m_PilotIndex,	//for edf pilots capturing hadean ships
 		i_last;
 
 	char
@@ -123,11 +109,6 @@ public:
 		*_Text8 = "The StarPortal lies just a few\nklicks to the east. Let's get\nmoving.",
 		*_Text9 = "MASSIVE INCOMING ATTACK WAVE:\nMULTIPLE HADEAN WALKERS, NUMEROUS\nASSAULT VEHICLES...Lock and load,\ntroops--protect the VENGEANCE at \nall costs.",
 		*_Text10 = "Find another way to rejoin the\nconvoy. Hurry--the VENGEANCE\nwon't last long without an\nescort.";
-
-	//Vector
-	//	Position1 = { 0, 0, 0 },
-	//	Position2 = { 0, 0, 0 },
-	//	Position3 = { 0, 0, 0 };
 	
 	char buf[256];	//scratch buffer for sprintf
 };
@@ -178,14 +159,14 @@ void edf5::Setup(void)
 	PreloadAudioMessage("edf0510.wav");
 	PreloadAudioMessage("edf05end.wav");
 
-	Object21 = GetHandle("portal1");
-	Object22 = GetHandle("portal2");
-	Object23 = GetHandle("exitportal");
+	m_Portal1 = GetHandle("portal1");
+	m_Portal2 = GetHandle("portal2");
+	m_ExitPortal = GetHandle("exitportal");
 	//for (int i = 0; i < NUM_DEFENDERS; i++){
 	//	sprintf_s(buf, "defender%d", i+1);
-	//	Object25[i] = GetHandle(buf);
+	//	m_Defenders[i] = GetHandle(buf);
 	//}
-	Object49 = GetHandle("hadeantrain");
+	//m_HadeanTrain = GetHandle("hadeantrain");
 }
 
 void edf5::AddObject(Handle h)
@@ -195,7 +176,7 @@ void edf5::AddObject(Handle h)
 
 void edf5::Execute(void)
 {
-	Object2 = GetPlayerHandle();
+	m_Player = GetPlayerHandle();
 	
 	if (!m_SetupDone){
 		OnMissionStart();
@@ -219,48 +200,46 @@ void edf5::Execute(void)
 }
 
 void edf5::OnMissionStart(void){
-	Object1 = BuildObject("ivrecy", 1, "recyclerspawn");
-	Goto(Object1, "recyclerpath", 1);
-	SetObjectiveOn(Object1);
-	Object5 = BuildObject("edf5trans", 1, "recyclerspawn");
-	SetObjectiveName(Object5, "Transport");
-	Goto(Object5, "recyclerpath", 1);
-	Object3 = BuildObject("ivserv", 1, "recyclerspawn");
-	Defend2(Object3, Object5, 1);
-	Object4 = BuildObject("ivserv", 1, "recyclerspawn");
-	Defend2(Object4, Object5, 1);
-	Object45 = BuildObject("ivserv", 1, "turret1");
-	SetGroup(Object45, 5);
-	Object46 = BuildObject("ivserv", 1, "turret1");
-	SetGroup(Object46, 5);
-	Object25[0] = BuildObject("ivturr", 1, "turret1");
-	SetGroup(Object25[0], 0);
-	Object25[1] = BuildObject("ivturr", 1, "turret2");
-	SetGroup(Object25[1], 0);
-	Object25[2] = BuildObject("ivscout", 1, "turret3");
-	SetGroup(Object25[2], 4);
-	Object25[3] = BuildObject("ivscout", 1, "turret4");
-	SetGroup(Object25[3], 4);
-	Object25[4] = BuildObject("ivtank", 1, "tank1");
-	SetGroup(Object25[4], 1);
-	Object25[5] = BuildObject("ivtank", 1, "tank2");
-	SetGroup(Object25[5], 1);
-	Object25[6] = BuildObject("ivmisl", 1, "tank3");
-	SetGroup(Object25[6], 2);
-	Object25[7] = BuildObject("ivmisl", 1, "tank4");
-	SetGroup(Object25[7], 2);
-	Object25[8] = BuildObject("ivrbomb", 1, "tank5");
-	SetGroup(Object25[8], 3);
-	Object25[9] = BuildObject("ivrbomb", 1, "tank6");
-	SetGroup(Object25[9], 3);
+	m_Recycler = BuildObject("ivrecy", 1, "recyclerspawn");
+	Goto(m_Recycler, "recyclerpath", 1);
+	SetObjectiveOn(m_Recycler);
+	m_Transport = BuildObject("edf5trans", 1, "recyclerspawn");
+	SetObjectiveName(m_Transport, "Transport");
+	Goto(m_Transport, "recyclerpath", 1);
+	m_ServiceTruck1 = BuildObject("ivserv", 1, "recyclerspawn");
+	Defend2(m_ServiceTruck1, m_Transport, 1);
+	m_ServiceTruck2 = BuildObject("ivserv", 1, "recyclerspawn");
+	Defend2(m_ServiceTruck2, m_Transport, 1);
+	m_ServiceTruck3 = BuildObject("ivserv", 1, "turret1");
+	SetGroup(m_ServiceTruck3, 5);
+	m_ServiceTruck4 = BuildObject("ivserv", 1, "turret1");
+	SetGroup(m_ServiceTruck4, 5);
+	m_Defenders[0] = BuildObject("ivturr", 1, "turret1");
+	SetGroup(m_Defenders[0], 0);
+	m_Defenders[1] = BuildObject("ivturr", 1, "turret2");
+	SetGroup(m_Defenders[1], 0);
+	m_Defenders[2] = BuildObject("ivscout", 1, "turret3");
+	SetGroup(m_Defenders[2], 4);
+	m_Defenders[3] = BuildObject("ivscout", 1, "turret4");
+	SetGroup(m_Defenders[3], 4);
+	m_Defenders[4] = BuildObject("ivtank", 1, "tank1");
+	SetGroup(m_Defenders[4], 1);
+	m_Defenders[5] = BuildObject("ivtank", 1, "tank2");
+	SetGroup(m_Defenders[5], 1);
+	m_Defenders[6] = BuildObject("ivmisl", 1, "tank3");
+	SetGroup(m_Defenders[6], 2);
+	m_Defenders[7] = BuildObject("ivmisl", 1, "tank4");
+	SetGroup(m_Defenders[7], 2);
+	m_Defenders[8] = BuildObject("ivrbomb", 1, "tank5");
+	SetGroup(m_Defenders[8], 3);
+	m_Defenders[9] = BuildObject("ivrbomb", 1, "tank6");
+	SetGroup(m_Defenders[9], 3);
 }
 
 void edf5::HandleMainState(void){
 	if (m_MissionTimer < GetTime()){
 		switch (m_MissionState){
 		case 0:
-			//Position1 = GetPosition(Object22);
-			//Position2 = GetPosition(Object21);
 			m_MissionState++;
 			m_MissionTimer = GetTime() + 5;
 			break;
@@ -286,82 +265,58 @@ void edf5::HandleMainState(void){
 			AudioMessage("edf0505.wav");	//O'Ryan:"We should be safe up here for a while..."
 			ClearObjectives();
 			AddObjective(_Text5, WHITE);
-			Object59 = BuildObject("aphanglider", 1, "gliderspawn");
-			Goto(Object5, "apcpathtobase", 1);
-			SetObjectiveOn(Object59);
+			m_HangGliderPickup = BuildObject("aphanglider", 1, "gliderspawn");
+			Goto(m_Transport, "apcpathtobase", 1);
+			SetObjectiveOn(m_HangGliderPickup);
 			m_DoHadeanAlarm = true;
-			Object50 = BuildObject("evscout", 0, "hadeanscout1");
-			KillPilot(Object50);
-			Object51 = BuildObject("evscout", 0, "hadeanscout2");
-			KillPilot(Object51);
-			Object52 = BuildObject("evtank", 0, "hadeantank1");
-			KillPilot(Object52);
-			Object53 = BuildObject("evtank", 0, "hadeantank2");
-			KillPilot(Object53);
-			Object54 = BuildObject("evmisl", 0, "hadeanzeus1");
-			KillPilot(Object54);
-			Object55 = BuildObject("evmisl", 0, "hadeanzeus2");
-			KillPilot(Object55);
-			Object56 = GetHandle("hadeanturret1");
-			SetObjectiveOn(Object56);
-			Object57 = GetHandle("hadeanturret2");
-			SetObjectiveOn(Object57);
+			m_EmptyShips[0] = BuildObject("evscout", 0, "hadeanscout1");
+			KillPilot(m_EmptyShips[0]);
+			m_EmptyShips[1] = BuildObject("evscout", 0, "hadeanscout2");
+			KillPilot(m_EmptyShips[1]);
+			m_EmptyShips[2] = BuildObject("evtank", 0, "hadeantank1");
+			KillPilot(m_EmptyShips[2]);
+			m_EmptyShips[3] = BuildObject("evtank", 0, "hadeantank2");
+			KillPilot(m_EmptyShips[3]);
+			m_EmptyShips[4] = BuildObject("evmisl", 0, "hadeanzeus1");
+			KillPilot(m_EmptyShips[4]);
+			m_EmptyShips[5] = BuildObject("evmisl", 0, "hadeanzeus2");
+			KillPilot(m_EmptyShips[5]);
+			m_HadTurr1 = GetHandle("hadeanturret1");
+			SetObjectiveOn(m_HadTurr1);
+			m_HadTurr2 = GetHandle("hadeanturret2");
+			SetObjectiveOn(m_HadTurr2);
 			m_MissionState++;
 			break;
 		case 5:	//LOC_48
-			if (GetDistance(Object5, "apcdeploy") < 100){
-				Object13[0] = BuildObject("ispilo", 1, "apcdeploy");
-				Goto(Object13[0], Object50, 1);
+		case 6:
+		case 7:
+		case 8:
+		case 9:
+		case 10:
+			if (GetDistance(m_Transport, "apcdeploy") < 100){
+				m_Pilots[m_PilotIndex] = BuildObject("ispilo", 1, "apcdeploy");
+				Goto(m_Pilots[m_PilotIndex], m_EmptyShips[m_PilotIndex], 1);
+				m_PilotIndex++;
 				m_MissionState++;
 				m_MissionTimer = GetTime() + 1;
 			}
 			break;
-		case 6:
-			Object13[1] = BuildObject("ispilo", 1, "apcdeploy");
-			Goto(Object13[1], Object51, 1);
-			m_MissionState++;
-			m_MissionTimer = GetTime() + 1;
-			break;
-		case 7:
-			Object13[2] = BuildObject("ispilo", 1, "apcdeploy");
-			Goto(Object13[2], Object52, 1);
-			m_MissionState++;
-			m_MissionTimer = GetTime() + 1;
-			break;
-		case 8:
-			Object13[3] = BuildObject("ispilo", 1, "apcdeploy");
-			Goto(Object13[3], Object53, 1);
-			m_MissionState++;
-			m_MissionTimer = GetTime() + 1;
-			break;
-		case 9:
-			Object13[4] = BuildObject("ispilo", 1, "apcdeploy");
-			Goto(Object13[4], Object54, 1);
-			m_MissionState++;
-			m_MissionTimer = GetTime() + 1;
-			break;
-		case 10:
-			Object13[5] = BuildObject("ispilo", 1, "apcdeploy");
-			Goto(Object13[5], Object55, 1);
-			m_MissionState++;
-			m_MissionTimer = GetTime() + 1;
-			break;
 		case 11:
-			Object13[6] = BuildObject("ispilo", 1, "apcdeploy");
-			Goto(Object13[6], Object56, 1);
+			m_Pilots[6] = BuildObject("ispilo", 1, "apcdeploy");
+			Goto(m_Pilots[6], m_HadTurr1, 1);
 			m_MissionState++;
 			m_MissionTimer = GetTime() + 1;
 			break;
 		case 12:
-			Object13[7] = BuildObject("ispilo", 1, "apcdeploy");
-			Goto(Object13[7], Object57, 1);
+			m_Pilots[7] = BuildObject("ispilo", 1, "apcdeploy");
+			Goto(m_Pilots[7], m_HadTurr2, 1);
 			m_MissionState++;
 			m_MissionTimer = GetTime() + 1;
 			break;
 		case 13:
-			SetObjectiveOff(Object56);
-			SetObjectiveOff(Object57);
-			SetObjectiveOn(Object23);
+			SetObjectiveOff(m_HadTurr1);
+			SetObjectiveOff(m_HadTurr2);
+			SetObjectiveOn(m_ExitPortal);
 			AudioMessage("edf0508.wav");	//Windex:"There's the portal up ahead on radar..."
 			ClearObjectives();
 			AddObjective(_Text8, WHITE);
@@ -369,33 +324,33 @@ void edf5::HandleMainState(void){
 			m_MissionTimer = GetTime() + 60;
 			break;
 		case 14:
-			Goto(Object1, "recyclerexit", 1);
-			Follow(Object5, Object1, 1);
+			Goto(m_Recycler, "recyclerexit", 1);
+			Follow(m_Transport, m_Recycler, 1);
 			m_MissionState++;
 			break;
 		case 15:	//LOC_83
-			if (GetDistance(Object1, Object23) < 25){
+			if (GetDistance(m_Recycler, m_ExitPortal) < 25){
 				Variable3 = 1;
-				Teleport(Object1, Object22, 10);
-				RemoveObject(Object1);
-				Goto(Object5, "recyclerexit", 1);
+				Teleport(m_Recycler, m_Portal2, 10);
+				RemoveObject(m_Recycler);
+				Goto(m_Transport, "recyclerexit", 1);
 				AudioMessage("edf05end.wav");	//Shultz:"Aw man, what are we getting into?"
-				Attack(TeleportIn("cvtank", 2, Object23, 10), Object2, 1);
+				Attack(TeleportIn("cvtank", 2, m_ExitPortal, 10), m_Player, 1);
 				m_MissionState++;
 			}
 			break;
 		case 16:	//LOC_93
-			if (GetDistance(Object5, Object23) < 50){
+			if (GetDistance(m_Transport, m_ExitPortal) < 50){
 				Variable4 = 1;
-				Teleport(Object5, Object22, 10);
-				RemoveObject(Object5);
-				Attack(TeleportIn("cvtank", 2, Object23, 10), Object2, 1);
+				Teleport(m_Transport, m_Portal2, 10);
+				RemoveObject(m_Transport);
+				Attack(TeleportIn("cvtank", 2, m_ExitPortal, 10), m_Player, 1);
 				m_MissionState++;
 			}
 			break;
 		case 17:	//LOC_102
-			if (GetDistance(Object2, Object23) < 25){
-				Teleport(Object2, Object22, 10);
+			if (GetDistance(m_Player, m_ExitPortal) < 25){
+				Teleport(m_Player, m_Portal2, 10);
 				SucceedMission(GetTime() + 1, "edf5win.des");
 				m_MissionState++;
 			}
@@ -416,8 +371,8 @@ void edf5::HandleRecyRetreat(void){
 			ClearObjectives();
 			AddObjective(_Text3, WHITE);
 			for (int i = 0; i < NUM_DEFENDERS; i++){
-				if (!IsPlayer(Object25[i])){
-					Follow(Object25[i], Object5, 1);
+				if (!IsPlayer(m_Defenders[i])){
+					Follow(m_Defenders[i], m_Transport, 1);
 				}
 			}
 			StartCockpitTimer(60);
@@ -426,7 +381,7 @@ void edf5::HandleRecyRetreat(void){
 			break;
 		case 2:
 			BuildObject("slagb2", 2, "blockade");
-			RemoveObject(Object21);
+			RemoveObject(m_Portal1);
 			m_RecyRetreatState++;
 			m_RecyRetreatTimer = GetTime() + 3;
 			break;
@@ -446,14 +401,14 @@ void edf5::HandleRecyRetreat(void){
 			}
 			break;
 		case 4:
-			Attack(BuildObject("evscout", 2, "attackerspawn2"), Object1, 1);
-			Attack(BuildObject("evscout", 2, "attackerspawn2"), Object5, 1);
+			Attack(BuildObject("evscout", 2, "attackerspawn2"), m_Recycler, 1);
+			Attack(BuildObject("evscout", 2, "attackerspawn2"), m_Transport, 1);
 			m_RecyRetreatState++;
 			break;
 		case 5:	//LOC_265
 			Variable7 = 0;
 			Variable2 = 2;
-			TeleportIn("evscout", 2, Object22, 10);
+			TeleportIn("evscout", 2, m_Portal2, 10);
 			m_RecyRetreatState++;
 			break;
 		case 6:	//LOC_269
@@ -464,17 +419,17 @@ void edf5::HandleRecyRetreat(void){
 			break;
 		case 7:
 		case 8:
-			Attack(BuildObject("evscout", 2, "attackerspawn2"), Object1, 1);
+			Attack(BuildObject("evscout", 2, "attackerspawn2"), m_Recycler, 1);
 			m_RecyRetreatState++;
 			m_RecyRetreatTimer = GetTime() + 45;
 			break;
 		case 9:
-			Attack(BuildObject("evscout", 2, "attackerspawn2"), Object1, 1);
+			Attack(BuildObject("evscout", 2, "attackerspawn2"), m_Recycler, 1);
 			m_RecyRetreatState++;
 			m_RecyRetreatTimer = GetTime() + 120;
 			break;
 		case 10:
-			Attack(BuildObject("evscout", 2, "attackerspawn2"), Object1, 1);
+			Attack(BuildObject("evscout", 2, "attackerspawn2"), m_Recycler, 1);
 			m_RecyRetreatState++;
 			break;
 		}
@@ -485,40 +440,40 @@ void edf5::HandleIntroBattle(void){
 	if (m_IntroTimer < GetTime()){
 		switch (m_IntroState){
 		case 0:	//LOC_142
-			if (GetDistance(Object1, Object21) < 25){
+			if (GetDistance(m_Recycler, m_Portal1) < 25){
 				AudioMessage("edf0502.wav");	//Windex:"We found a short range portal..."
 				ClearObjectives();
 				AddObjective(_Text2, WHITE);
 				Variable2 = 1;
-				Teleport(Object1, Object22, 10);
-				Stop(Object1, 1);
-				Goto(Object5, "blockade", 1);
+				Teleport(m_Recycler, m_Portal2, 10);
+				Stop(m_Recycler, 1);
+				Goto(m_Transport, "blockade", 1);
 				m_IntroState++;
 			}
 			break;
 		case 1:	//LOC_151
-			if (GetDistance(Object5, "blockade") < 50){
-				Teleport(Object5, Object22, 10);
-				Stop(Object5, 1);
+			if (GetDistance(m_Transport, "blockade") < 50){
+				Teleport(m_Transport, m_Portal2, 10);
+				Stop(m_Transport, 1);
 				m_RecyRetreat = true;
-				Goto(Object3, "blockade", 1);
-				Goto(Object4, "blockade", 1);
+				Goto(m_ServiceTruck1, "blockade", 1);
+				Goto(m_ServiceTruck2, "blockade", 1);
 				m_IntroState++;
 			}
 			break;
 		case 2:	//LOC_158
-			if (GetDistance(Object3, "blockade") < 25 || 
-				GetDistance(Object4, "blockade") < 25){
-				Teleport(Object3, Object22, 10);
-				Defend2(Object3, Object5, 1);
-				Teleport(Object4, Object22, 10);
-				Defend2(Object4, Object5, 1);
+			if (GetDistance(m_ServiceTruck1, "blockade") < 25 || 
+				GetDistance(m_ServiceTruck2, "blockade") < 25){
+				Teleport(m_ServiceTruck1, m_Portal2, 10);
+				Defend2(m_ServiceTruck1, m_Transport, 1);
+				Teleport(m_ServiceTruck2, m_Portal2, 10);
+				Defend2(m_ServiceTruck2, m_Transport, 1);
 				m_IntroState++;
 			}
 			break;
 		case 3:	//LOC_171
 			Variable6++;
-			if (Variable6 > 300 || GetDistance(Object1, Object2) < 150){
+			if (Variable6 > 300 || GetDistance(m_Recycler, m_Player) < 150){
 				m_IntroState++;
 			}
 			else {
@@ -526,29 +481,29 @@ void edf5::HandleIntroBattle(void){
 			}			
 			break;
 		case 4:	//LOC_176
-			SetGroup(Object3, 0);
-			SetGroup(Object4, 0);
-			Goto(Object1, "recyclerpath1", 1);
-			Goto(Object5, "recyclerpath1", 1);
-			Defend2(Object3, Object5, 0);
-			Defend2(Object4, Object5, 0);
+			SetGroup(m_ServiceTruck1, 0);
+			SetGroup(m_ServiceTruck2, 0);
+			Goto(m_Recycler, "recyclerpath1", 1);
+			Goto(m_Transport, "recyclerpath1", 1);
+			Defend2(m_ServiceTruck1, m_Transport, 0);
+			Defend2(m_ServiceTruck2, m_Transport, 0);
 			Variable8 = 1;
 			m_IntroState++;
 			m_IntroTimer = GetTime() + 60;
 			break;
 		case 5:	//LOC_184
-			if (GetDistance(Object1, "basedeploy") < 25){
+			if (GetDistance(m_Recycler, "basedeploy") < 25){
 				Variable2 = 4;
 				m_IntroState++;
 			}
 			break;
 		case 6:	//LOC_187
-			if (GetDistance(Object2, Object1) < 150){
+			if (GetDistance(m_Player, m_Recycler) < 150){
 				m_IntroState++;
 			}
 			break;
 		case 7:	//LOC_190
-			if (GetDistance(Object5, "basedeploy") < 200){
+			if (GetDistance(m_Transport, "basedeploy") < 200){
 				Variable5 = 1;
 				m_IntroState++;
 			}
@@ -565,7 +520,7 @@ void edf5::SpawnAttackers(void){	//Routine5
 			m_SpawnAttackerTimer = GetTime() + 30;
 			break;
 		case 1:
-			//Object2 = GetPlayerHandle();
+			//m_Player = GetPlayerHandle();
 			AddObjective(_Text9, WHITE);
 			Goto(BuildObject("evatank", 2, "attackerspawn"), "tankpath", 1);
 			Goto(BuildObject("evscout", 2, "attackerspawn"), "zeuspath", 1);
@@ -608,19 +563,16 @@ void edf5::SpawnAttackers(void){	//Routine5
 	}
 }
 
-//Object49 is never set!?
+//m_HadeanTrain is never set!?
 void edf5::HadeanAlarm(void){	//Routine6
-	if (m_DoHadeanAlarm && IsAround(Object49)){
-		Object2 = GetPlayerHandle();
-		if (IsOdf(Object2, "ispilo") && GetDistance(Object2, Object49) < 400){
+	if (m_DoHadeanAlarm && IsAround(m_HadeanTrain)){
+		m_Player = GetPlayerHandle();
+		if (IsOdf(m_Player, "ispilo") && GetDistance(m_Player, m_HadeanTrain) < 400){
 			//AudioMessage("edf05alarm.wav");	//doesn't exist!
-			Vector pos = GetPosition(Object49);
-			Goto(BuildObject("ESPILO", 2, pos), Object50, 2);
-			Goto(BuildObject("ESPILO", 2, pos), Object51, 2);
-			Goto(BuildObject("ESPILO", 2, pos), Object52, 2);
-			Goto(BuildObject("ESPILO", 2, pos), Object53, 2);
-			Goto(BuildObject("ESPILO", 2, pos), Object54, 2);
-			Goto(BuildObject("ESPILO", 2, pos), Object55, 2);
+			Vector pos = GetPosition(m_HadeanTrain);
+			for (int i = 0; i < NUM_EMPTIES; i++){
+				Goto(BuildObject("ESPILO", 2, pos), m_EmptyShips[i], 2);
+			}
 			m_DoHadeanAlarm = false;
 		}
 	}
@@ -661,13 +613,13 @@ void edf5::SpawnBirds(void){
 }
 
 void edf5::HandlePortal(void){
-	if (GetDistance(Object2, Object21) < 25){
+	if (GetDistance(m_Player, m_Portal1) < 25){
 		if (Variable2 == 0 && !m_MissionFailed){
 			FailMission(GetTime() + 5, "edf5tele.txt");
 			m_MissionFailed = true;
 		}
 		else if(Variable2 == 1){
-			Teleport(Object2, Object22, 10);
+			Teleport(m_Player, m_Portal2, 10);
 			Variable2 = 3;
 		}
 	}
@@ -675,17 +627,18 @@ void edf5::HandlePortal(void){
 
 void edf5::CheckStuffIsAlive(void){
 	if (!m_MissionFailed){
-		if (!IsAround(Object1) && !Variable3){
+		if (!IsAround(m_Recycler) && !Variable3){
 			FailMission(GetTime() + 5, "edf5recy.txt");
 			m_MissionFailed = true;
 		}
-		else if (!IsAround(Object5) && !Variable4){
+		else if (!IsAround(m_Transport) && !Variable4){
 			FailMission(GetTime() + 5, "edf5trans.txt");
 			m_MissionFailed = true;
 		}
-		else if (GetDistance(Object2, "pointofnoreturn") < 100 && !Variable2){
+		else if (GetDistance(m_Player, "pointofnoreturn") < 100 && !Variable2){
 			BuildObject("deathbomb", 2, "pointofnoreturn");
 			FailMission(GetTime() + 25, "edf5close.txt");
+			m_MissionFailed = true;
 		}
 	}
 }
